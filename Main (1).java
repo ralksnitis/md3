@@ -1,483 +1,677 @@
-import java.io.IOException;
+// 211RDB381, Ralfs Alksnītis, 1.grupa
+
 import java.util.Scanner;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.util.*;
+import java.text.*;
+import java.io.*;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.List;
-import java.io.File;
-import java.io.PrintWriter;
-import java.io.*;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.text.ParseException;
-import java.util.Collections;
+import java.io.IOException;
+import java.io.FileNotFoundException;
+import java.io.Serializable;
+
+class Journey implements Serializable {
+    public int id, days;
+    public String city, date, vehicle;
+    double price;
+    static final DecimalFormat priceformat = new DecimalFormat("0.00");
+
+    public Journey(int id, String city, String date, int days, double price, String vehicle) {
+        this.id = id;
+        this.city = city;
+        this.date = date;
+        this.days = days;
+        this.price = price;
+        this.vehicle = vehicle;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public int getDays() {
+        return days;
+    }
+
+    public void setDays(int days) {
+        this.days = days;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getVehicle() {
+        return vehicle;
+    }
+
+    public void setVehicle(String vehicle) {
+        this.vehicle = vehicle;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
+    public String getString() {
+        return id + ";" + city + ";" + date + ";" + days + ";" + price + ";" + vehicle;
+    }
+}
 
 public class Main {
-	public static void main(String[] args) throws IOException {
-		Scanner sc = new Scanner(System.in);
-		String choiseStr, choiseStr1;
-		String sourceFile;
-		//System.out.println("input file name:");
-		//sourceFile = sc.nextLine();
-		sourceFile = "db.csv";
-		loop: while (true) {
-			//System.out.println("input name:");
-			choiseStr1 = sc.nextLine();
-			String[] arr = choiseStr1.split(" ");
-      List<String> list = Arrays.asList(arr);
-      choiseStr = list.get(0);
-       
-			switch (choiseStr) {
-			case "print":
-      print(sourceFile);
-        break;
-				
-			case "add":
-        choiseStr = list.get(1);
-        String[] choise = choiseStr.split(";");
-        list = Arrays.asList(choise);
+    static Scanner sc = new Scanner(System.in);
+    static String path = "db.csv";
+    static String tempFile = "dbtemp.csv";
+    static final DecimalFormat priceformat = new DecimalFormat("0.00");
+
+    public static void main(String[] args) throws IOException {
+        String inp = "";
+        while (!inp.equals("exit")) {
+            System.out.print("\ncommand: ");
+            inp = (String) sc.nextLine();
+            String[] inpm = inp.split(" ");
+            switch (inpm[0]) {
+                case "print":
+                    print();
+                    break;
+
+                case "add":
+                    if (inpm.length == 1) {
+                        System.out.println("wrong field count");
+                        break;
+                    }
+                    add(inpm);
+                    break;
+
+                case "del":
+                    if (inpm.length == 1) {
+                        System.out.println("wrong id");
+                        break;
+                    }
+                    del(inpm[1]);
+                    break;
+
+                case "edit":
+                    if (inpm.length == 1) {
+                        System.out.println("wrong field count");
+                        break;
+                    }
+                    edit(inpm);
+                    break;
+                case "sort":
+                    sort();
+                    break;
+
+                case "find":
+                    if (inpm.length == 1) {
+                        System.out.print("wrong field count");
+                        break;
+                    }
+                    find(inpm[1]);
+                    break;
+
+                case "avg":
+                    avg();
+                    break;
+
+                case "exit":
+                    break;
+
+                default:
+                    System.out.println("wrong command");
+                    break;
+            }
+        }
+        sc.close();
+    }
+
+    public static boolean isnumdouble(String str) {
+        if (str == null) {
+            return false;
+        }
         try {
-        String on = list.get(0);
-        String tw = list.get(1);
-        String th = list.get(2);
-        String fo = list.get(3);
-        String fi = list.get(4);
-        String si = list.get(5);
-        if(list.size()<7){
-          String toadd = (on + ";" + tw + ";" + th + ";" + fo + ";" + fi + ";" + si);
-				  add(sourceFile, toadd);
+            double d = Double.parseDouble(str);
+        } catch (NumberFormatException nfe) {
+            return false;
         }
-        else{
-          System.out.println("wrong field count");
-          }
+        return true;
+    }
+
+    public static boolean isnumint(String str) {
+        if (str == null) {
+            return false;
         }
-        catch(Exception e) {
-          System.out.println("wrong field count");
-        }
-				break;
-			case "del":
-        String met = list.get(1);
-				del(sourceFile, met);
-				break;
-			case "edit":
-       choiseStr = list.get(1);
-        String hah = choiseStr.replace(";", ";k");
-        int count = choiseStr.length() - choiseStr.replace(";", "").length();
-        choise = hah.split(";");
-        list = Arrays.asList(choise);
         try {
-        String on = list.get(0);
-        String tw = list.get(1);
-        String th = list.get(2);
-        String fo = list.get(3);
-        String fi = list.get(4);
-        String si = list.get(5);
-        if(count == 5){
-          String toadd = (on + ";" + tw + ";" + th + ";" + fo + ";" + fi + ";" + si);
-				edit(sourceFile, toadd);
+            int i = Integer.parseInt(str);
+        } catch (NumberFormatException nfe) {
+            return false;
         }
-        else{
-          System.out.println("wrong field count");
-        }
-        }
-        catch(ArrayIndexOutOfBoundsException exception) {
-          System.out.println("wrong field count");
-        }
-				break;
-			case "sort":
-				sort(sourceFile);
-				break;
-			case "find":
-        met = list.get(1);
-        find(sourceFile, met);
-				break;
-			case "avg":
-				avg(sourceFile);
-				break;
-			case "exit":
-				break loop; 
-      default:
-        System.out.println("wrong command");
-        break;
-			}
-    }
-     sc.close(); 
-	}
-	public static void print(String sourceFile) throws IOException {
-		String str;
-    FileReader fr = new FileReader(sourceFile);
-    Scanner sc = new Scanner(fr);
-	  System.out.println("------------------------------------------------------------");
-		System.out.printf("%-4s%-21s%-11s%6s%10s%-8s\n", "ID","City","Date","Days","Price"," Vehicle");
-		System.out.println("------------------------------------------------------------");
-		 while(sc.hasNextLine()) {
-       str = sc.nextLine();
-       String[] arr = str.split(";");
-       List<String> list = Arrays.asList(arr);
-       System.out.printf("%-4s%-21s%-11s%6s%10s%-1s%-8s\n", list.get(0), list.get(1),list.get(2),list.get(3),list.get(4)," ",list.get(5));		      
-		 }
-    System.out.println("------------------------------------------------------------");
-    sc.close();
-	}
-  
-	public static void add(String sourceFile, String toadd ) throws IOException {
-    String[] arr = toadd.split(";");
-    List<String> list = Arrays.asList(arr);
-    try{
-      int num = Integer.parseInt(list.get(0));
-      if(num>99 && num<1000){ 
-	    }
-      else{
-		    System.out.println("wrong id");
-      return;
-	    }
-    }
-    catch(Exception e){
-      System.out.println("wrong id");
-      return;
-    }
-    boolean is = false;
-    String line, data[];
-    FileReader fr = new FileReader(sourceFile);
-    BufferedReader br = new BufferedReader(fr);
-    while((line = br.readLine()) != null){
-      data = line.split(";");
-      if((data[0].equalsIgnoreCase(list.get(0)))){
-        is = true;
-      }
-    }
-    br.close();
-    if (is){
-      System.out.println("wrong id");
-      return;
-    }
-    String on= list.get(0);
-
-    String words[]=list.get(1).split("\\s");  
-    String tw="";  
-    for(String s:words){  
-      String fir=s.substring(0,1);  
-      String afterfirst=s.substring(1);  
-      tw+=fir.toUpperCase()+afterfirst;  
-    }  
-
-    String th = list.get(2);
-    if(th.matches("(0?[1-9]|[12][0-9]|3[01])\\/(0?[1-9]|1[0-2])\\/([0-9]{4})")){
-    }
-    else{
-      System.out.println("wrong date");
-      return;
-    }
-    
-    try{
-      Integer.parseInt(list.get(3));
-    }catch(Exception e ){
-      System.out.println("wrong day count");
-      return;
-    }
-    String fo = list.get(3);
-    try {  
-      Double.parseDouble(list.get(4));  
-    } catch(NumberFormatException e){  
-      System.out.println("wrong price");
-      return;
-    }  
-    String fi = list.get(4);
-    String si = list.get(5).toUpperCase(); 
-    if(si.matches("(?i)\\bPLANE\\b")||si.matches 
-   ("(?i)\\bTRAIN\\b")||si.matches("(?i)\\bBUS\\b")||si.matches("(?i)\\bBOAT\\b")){
-    }
-    else{
-      System.out.println("wrong vehicle");
-      return;
+        return true;
     }
 
- FileWriter fw = new FileWriter(sourceFile, true);
-    toadd = (on + ";" + tw + ";" + th + ";" + fo + ";" + fi + ";" + si);
-    fw.write(toadd + "\n");
-    System.out.println("added");
-    fw.close();
-  }
-	public static void del(String sourceFile, String met) throws IOException {
-    int pos = 0;
-    String split = ";";
-    File old = new File(sourceFile);
-    File next = new File("db1.csv");
-    boolean is = false;
-    String line, data[];
-    try{
-      FileWriter fw = new FileWriter("db1.csv", true);
-      BufferedWriter bw = new BufferedWriter(fw);
-      PrintWriter pw = new PrintWriter(bw);
-      FileReader fr = new FileReader(sourceFile);
-      BufferedReader br = new BufferedReader(fr);
-      while((line = br.readLine()) != null){
-        data = line.split(split);
-        if(!(data[pos].equalsIgnoreCase(met))){
-          pw.println(line);
-        }
-        else{
-          is = true;
-        }
-      }
-      if (is){
-        System.out.println("deleted");
-      }
-      else{
-        System.out.println("wrong id");
-      }
-      pw.flush();
-      pw.close();
-      fw.close();
-      bw.close();
-      fr.close();
-      br.close();
+    public static void print() throws IOException {
+        String line = "";
+        System.out.println("------------------------------------------------------------");
+        System.out.printf("%-4s", "ID");
+        System.out.printf("%-21s", "City");
+        System.out.printf("%-11s", "Date");
+        System.out.printf("%6s", "Days");
+        System.out.printf("%10s", "Price");
+        System.out.printf("%7s", " Vehicle");
+        System.out.println("\n------------------------------------------------------------");
 
-      old.delete();
-      File oh = new File(sourceFile);
-      next.renameTo(oh);
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(path));
+            while ((line = br.readLine()) != null) {
+                String[] values = line.split(";");
+                System.out.printf("%-4s", values[0]);
+                System.out.printf("%-21s", values[1]);
+                System.out.printf("%-11s", values[2]);
+                System.out.printf("%6s", values[3]);
+                System.out.printf("%10s", priceformat.format(Double.parseDouble(values[4])));
+                System.out.printf("%7s", values[5]);
+                System.out.println();
+            }
+            System.out.println("------------------------------------------------------------");
+            br.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-    catch(Exception e){
-    }
-  }
-	
-	public static void edit(String sourceFile, String toadd) {
-    int pos = 0;
-    String split = ";";
-    String space = "k";
-    File old = new File(sourceFile);
-    File next = new File("db1.csv");
-    boolean is = false;
-    String[] arr = toadd.split(";");
-    List<String> list = Arrays.asList(arr);
-    String on = list.get(0);
-    String tw = list.get(1);
-    String th = list.get(2);
-    String fo = list.get(3);
-    String fi = list.get(4);
-    String si = list.get(5);
-
-    String line, data[];
-    try{
-      FileWriter fw = new FileWriter("db1.csv", true);
-      BufferedWriter bw = new BufferedWriter(fw);
-      PrintWriter pw = new PrintWriter(bw);
-      FileReader fr = new FileReader(sourceFile);
-      BufferedReader br = new BufferedReader(fr);
-      while((line = br.readLine()) != null){
-        data = line.split(split);
-        if((data[pos].equalsIgnoreCase(on))){
-          int num = Integer.parseInt(list.get(0));
-          if(num>99 && num<1000){
-	        }
-          else{
-		        System.out.println("wrong id");
+    public static void add(String[] inputmas) throws IOException, FileNotFoundException {
+        String city;
+        String[] addinfo;
+        if (inputmas.length == 2) {
+            addinfo = inputmas[1].split(";");
+        } else {
+            city = inputmas[1];
+            for (int j = 2; j < inputmas.length; j++) {
+                city = city + " " + inputmas[j];
+            }
+            addinfo = city.split(";");
+        }
+        if (addinfo.length != 6) {
+            System.out.println("wrong field count");
             return;
-	        }
-          if(list.get(1).equals(space)){
-            tw = data[1];
-          } 
-          else{
-            String tw1 = tw.substring(1);
-            String s1 = tw1.substring(0, 1).toUpperCase();
-            tw = s1 + tw1.substring(1);
-          }
-          
-        String th1 = list.get(2).substring(0,1);
-      if(th1.matches("(0?[1-9]|[12][0-9]|3[01])\\/(0?[1-9]|1[0-2])\\/([0-9]{4})")){
-        th = th1;
-      }
-      else if(th.equals(space)){
-        th = data[2];
-      }  
-      else{
-        System.out.println("wrong date");
-        return;
-      }
-        fo = list.get(3).substring(1);
-        boolean der = true;
-          try{
-            Integer.parseInt(fo);
-            der = true;
-          }catch(Exception e ){
-            der = false;
-          }
-          if(der){
-          }
-          else if(list.get(3).equals(space)){
-            fo = data[3];
-          }
-          else{
+        }
+        if (!isnumint(addinfo[0]) || addinfo[0].length() != 3) {
+            System.out.println("wrong id");
+            return;
+        }
+        String line = "";
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(path));
+            while ((line = br.readLine()) != null) {
+                String[] values = line.split(";");
+                if (values[0].equals(addinfo[0])) {
+                    System.out.println("wrong id");
+                    return;
+                }
+            }
+            br.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        String[] splitcity = addinfo[1].split(" ");
+        addinfo[1] = "";
+        for (int j = 0; j < splitcity.length; j++) {
+            splitcity[j] = splitcity[j].toLowerCase();
+            splitcity[j] = splitcity[j].substring(0, 1).toUpperCase() + splitcity[j].substring(1);
+            addinfo[1] = addinfo[1] + splitcity[j];
+            if (j + 1 < splitcity.length) {
+                addinfo[1] = addinfo[1] + " ";
+            }
+        }
+        String date[] = addinfo[2].split("/");
+        int d = Integer.parseInt(date[0]);
+        int m = Integer.parseInt(date[1]);
+        String y = date[2];
+        if ((d <= 0 || d >= 32) || (m <= 0 || m >= 13) || y.length() != 4) {
+            System.out.println("wrong date");
+            return;
+        }
+        if (!isnumint(addinfo[3])) {
             System.out.println("wrong day count");
             return;
-          }
-
-        fi = list.get(4).substring(1);
-        boolean der1 = true;
-          try{
-            Double.parseDouble(fi);
-            der1 = true;
-          }catch(Exception e ){
-            der1 = false;
-          }
-          if(der1){
-          }
-          else if(list.get(4).equals(space)){
-            fi = data[4];
-          }
-          else{
+        }
+        if (!isnumdouble(addinfo[4])) {
             System.out.println("wrong price");
             return;
-          }
-
-      String si1 = list.get(5).toUpperCase().substring(1);    
-      if(si1.matches("(?i)\\bPLANE\\b")||si1.matches 
-   ("(?i)\\bTRAIN\\b")||si1.matches("(?i)\\bBUS\\b")||si1.matches("(?i)\\bBOAT\\b")){
-        si = si1;
-      }
-      else if(list.get(5).equals(space)){
-        si = data[5];
-      }
-      else{
-        System.out.println("wrong vehicle");
-        return;
-      } 
-        toadd = (on + ";" + tw + ";" + th + ";" + fo + ";" + fi + ";" + si);
-        is = true;
-        pw.println(toadd);
-      }
-      else{
-        pw.println(line);
-      }
-    }
-      
-      if (is){
-        System.out.println("changed");
-      }
-      else{
-        System.out.println("wrong id");
-      }
-      pw.flush();
-      pw.close();
-      fw.close();
-      bw.close();
-      fr.close();
-      br.close();
-
-      old.delete();
-      File oh = new File(sourceFile);
-      next.renameTo(oh);
-    }
-    catch(Exception e){
-    }   
-	}
-	public static void sort(String sourceFile) {
-    String split = ";";
-    String line, date, data[];
-    File old = new File(sourceFile);
-    File next = new File("db1.csv");
-    List<String> list1 = new ArrayList<String>();
-    List<String> list2 = new ArrayList<String>();
-    List<String> list3 = new ArrayList<String>();
-    try{
-      FileWriter fw = new FileWriter("db1.csv", true);
-      BufferedWriter bw = new BufferedWriter(fw);
-      PrintWriter pw = new PrintWriter(bw);
-      FileReader fr = new FileReader(sourceFile);
-      BufferedReader br = new BufferedReader(fr);
-      int j = 0;
-      while((line = br.readLine()) != null){
-        data = line.split(split);
-        date = data[2];
-        list3.add(line);
-        j++;
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-        SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd");
-        list1.add(sdf2.format(sdf.parse(date)));
-        pw.println(line);
-       } 
-      
-      Collections.sort(list1);
-      
-      for(int i = 0; i < list1.size();i++){
-      SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-      SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd");
-      list2.add(sdf.format(sdf2.parse(list1.get(i))));
-      if(list1.get(i) == null){
-        break;
-      }
-      }
-      fw.close();
-      fr.close();
-      System.out.println(list2);
-      System.out.println(list3);
-      fw = new FileWriter("db1.csv", true);
-      bw = new BufferedWriter(fw);
-      pw = new PrintWriter(bw);
-      fr = new FileReader(sourceFile);
-      br = new BufferedReader(fr);
-      while((line = br.readLine()) != null){
-        data = line.split(split);
-        date = data[2];
-        for (int i=0; i<list2.size();i++){
-          if(date.equals(list2.get(i))){
-            pw.println(list3.get(i));
-          }
         }
-      }
-      pw.flush();
-      pw.close();
-      fw.close();
-      bw.close();
-      fr.close();
-      br.close();
+        String t = addinfo[5];
+        t = t.toUpperCase();
+        if (!(t.equals("TRAIN") || t.equals("BOAT") || t.equals("PLANE") || t.equals("BUS"))) {
+            System.out.println("wrong vehicle");
+            return;
+        }
 
-      old.delete();
-      File oh = new File(sourceFile);
-      next.renameTo(oh);
-      System.out.println("sorted");
+        String inpst = "";
+        line = "";
+        inpst = addinfo[0] + ";" + addinfo[1] + ";" + addinfo[2] + ";" + addinfo[3] + ";" +
+            priceformat.format(Double.parseDouble(addinfo[4])) + ";" + addinfo[5];
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(path));
+            BufferedWriter wr = new BufferedWriter(new FileWriter(tempFile));
+
+            while ((line = br.readLine()) != null) {
+                wr.write(line + System.getProperty("line.separator"));
+            }
+            wr.write(inpst);
+
+            System.out.println("added");
+            wr.close();
+            br.close();
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        File sourceFile = new File("db.csv");
+        File temptFile = new File("dbtemp.csv");
+        sourceFile.delete();
+        temptFile.renameTo(sourceFile);
+        temptFile.delete();
+
     }
-    catch(Exception e){
-    }   
-	}
-	public static void find(String sourceFile, String met) throws IOException {
-		String str;
-    FileReader fr = new FileReader(sourceFile);
-    Scanner sc = new Scanner(fr);
-    double price=Double.parseDouble(met);
-	  System.out.println("------------------------------------------------------------");
-		System.out.printf("%-4s%-21s%-11s%6s%10s%-8s\n", "ID","City","Date","Days","Price"," Vehicle");
-		System.out.println("------------------------------------------------------------");
-		while(sc.hasNextLine()) {
-      str = sc.nextLine();
-      String[] arr = str.split(";");
-      List<String> list = Arrays.asList(arr);
-      double d=Double.parseDouble(list.get(4));
-      if(d <= price){
-        System.out.printf("%-4s%-21s%-11s%6s%10s%-1s%-8s\n", list.get(0), list.get(1),list.get(2),list.get(3),list.get(4)," ",list.get(5));	
-       }	      
-		}
-    System.out.println("------------------------------------------------------------");
-    sc.close();
-	}
-	public static void avg(String sourceFile) throws IOException {
-		String str;
-    Double sum=0.00;
-    int count=0;
-    FileReader fr = new FileReader(sourceFile);
-    Scanner sc = new Scanner(fr);
-		while(sc.hasNextLine()) {
-      str = sc.nextLine();
-      String[] arr = str.split(";");
-      List<String> list = Arrays.asList(arr);
-      double d=Double.parseDouble(list.get(4));
-      sum = sum + d;
-      count++;
-		}
-    System.out.printf("average="+"%.2f\n",sum/count);
-    sc.close();
-	}
+
+    public static void del(String idstr) throws FileNotFoundException, IOException {
+        if (idstr == null) {
+            System.out.println("wrong id");
+            return;
+        }
+        try {
+            int id = Integer.parseInt(idstr);
+        } catch (NumberFormatException e) {
+            System.out.println("wrong id");
+            return;
+        }
+        int rowcount = 0;
+        int idrow = 0;
+        boolean idtest = true;
+        String line = "";
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(path));
+            while ((line = br.readLine()) != null) {
+                String[] values = line.split(";");
+                int fid = Integer.parseInt(values[0]);
+                int id = Integer.parseInt(idstr);
+                if (fid == id) {
+                    idtest = false;
+                    idrow = rowcount;
+                }
+                rowcount++;
+            }
+            br.close();
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (idtest) {
+            System.out.println("wrong id");
+            return;
+        }
+
+        Journey mas[] = new Journey[rowcount - 1];
+        int j = 0;
+        int i = 0;
+        line = "";
+
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(path));
+            while ((line = br.readLine()) != null) {
+                if (idrow != j) {
+                    String[] row = line.split(";");
+                    Journey journey = new Journey(Integer.parseInt(row[0]), row[1], row[2], Integer.parseInt(row[3]), Double.parseDouble(row[4]), row[5]);
+                    mas[i++] = journey;
+                }
+                j++;
+            }
+            br.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            BufferedWriter wr = new BufferedWriter(new FileWriter(tempFile));
+            for (j = 0; j < mas.length; j++) {
+                wr.write(mas[j].getString() + System.getProperty("line.separator"));
+            }
+
+
+            System.out.println("deleted");
+            wr.close();
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        File sourceFile = new File("db.csv");
+        File temptFile = new File("dbtemp.csv");
+        sourceFile.delete();
+        temptFile.renameTo(sourceFile);
+        temptFile.delete();
+
+    }
+
+    public static void edit(String[] inputmas) throws FileNotFoundException, IOException {
+
+
+        String city;
+        String[] addinfo;
+        if (inputmas.length == 2) {
+            addinfo = inputmas[1].split(";");
+        } else {
+            city = inputmas[1];
+            for (int j = 2; j < inputmas.length; j++) {
+                city = city + " " + inputmas[j];
+            }
+            addinfo = city.split(";");
+        }
+        if (addinfo.length != 6) {
+            System.out.println("wrong field count");
+            return;
+        }
+        if (!isnumint(addinfo[0]) || addinfo[0].length() != 3) {
+            System.out.println("wrong id");
+            return;
+        }
+        boolean idis = true;
+        String line = "";
+        int c = 0;
+        int cid = 0;
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(path));
+            while ((line = br.readLine()) != null) {
+                String[] values = line.split(";");
+                if (values[0].equals(addinfo[0])) {
+                    idis = false;
+                    cid = c;
+                }
+                c++;
+            }
+            br.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (idis) {
+            System.out.println("wrong id");
+            return;
+        }
+
+        Journey array[] = new Journey[c];
+        int j = 0;
+        line = "";
+
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(path));
+            while ((line = br.readLine()) != null) {
+                String[] row = line.split(";");
+                Journey journey = new Journey(Integer.parseInt(row[0]), row[1], row[2], Integer.parseInt(row[3]),
+                    Double.parseDouble(row[4]), row[5]);
+                array[j++] = journey;
+            }
+            br.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (!addinfo[1].equals("")) {
+            String[] splitcity = addinfo[1].split(" ");
+            addinfo[1] = "";
+            for (j = 0; j < splitcity.length; j++) {
+                splitcity[j] = splitcity[j].toLowerCase();
+                splitcity[j] = splitcity[j].substring(0, 1).toUpperCase() + splitcity[j].substring(1);
+                addinfo[1] = addinfo[1] + splitcity[j];
+                if (j + 1 < splitcity.length) {
+                    addinfo[1] = addinfo[1] + " ";
+                }
+            }
+            array[cid].setCity(addinfo[1]);
+        }
+        if (!addinfo[2].equals("")) {
+            String date[] = addinfo[2].split("/");
+            int d = Integer.parseInt(date[0]);
+            int m = Integer.parseInt(date[1]);
+            String y = date[2];
+            if ((d <= 0 || d >= 32) || (m <= 0 || m >= 13) || y.length() != 4) {
+                System.out.println("wrong date");
+                return;
+            }
+            array[cid].setDate((addinfo[2]));
+        }
+        if (!addinfo[3].equals("")) {
+            if (!isnumint(addinfo[3])) {
+                System.out.println("wrong day count");
+                return;
+            }
+            array[cid].setDays(Integer.parseInt(addinfo[3]));
+        }
+        if (!addinfo[4].equals("")) {
+            if (!isnumdouble(addinfo[4])) {
+                System.out.println("wrong price");
+                return;
+            }
+            array[cid].setPrice(Double.parseDouble(addinfo[4]));
+        }
+        if (!addinfo[5].equals("")) {
+            String t = addinfo[5];
+            t = t.toUpperCase();
+            if (!(t.equals("TRAIN") || t.equals("BOAT") || t.equals("PLANE") || t.equals("BUS"))) {
+                System.out.println("wrong vehicle");
+                return;
+            }
+            array[cid].setVehicle(t);
+        }
+        try {
+
+            BufferedWriter wr = new BufferedWriter(new FileWriter(tempFile));
+            for (j = 0; j < array.length; j++) {
+                wr.write(array[j].getString() + System.getProperty("line.separator"));
+
+            }
+            wr.close();
+            System.out.println("changed");
+
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        File sourceFile = new File("db.csv");
+        File temptFile = new File("dbtemp.csv");
+        sourceFile.delete();
+        temptFile.renameTo(sourceFile);
+        temptFile.delete();
+
+    }
+    public static void sort() throws FileNotFoundException, IOException {
+        PrintWriter outwr = new PrintWriter(new FileWriter(tempFile));
+        int c = 0;
+        String line;
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(path));
+            while ((line = br.readLine()) != null) {
+                c++;
+            }
+            br.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Journey journey[] = new Journey[c];
+        int i = 0;
+        line = "";
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(path));
+            while ((line = br.readLine()) != null) {
+                String[] values = line.split(";");
+                Journey infojourney = new Journey(Integer.parseInt(values[0]), values[1], values[2],
+                    Integer.parseInt(values[3]), Double.parseDouble(values[4]), values[5]);
+                journey[i++] = infojourney;
+            }
+            br.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        ArrayList < String > dateList = new ArrayList < > ();
+        for (i = 0; i < journey.length; i++) {
+            dateList.add(journey[i].getDate());
+        }
+        Collections.sort(dateList, new Comparator < String > () {
+            DateFormat f = new SimpleDateFormat("dd/MM/yyyy");
+
+            public int compare(String d1, String d2) {
+                try {
+                    return f.parse(d1).compareTo(f.parse(d2));
+                } catch (ParseException e) {
+                    throw new IllegalArgumentException(e);
+                }
+            }
+        });
+
+        String str;
+
+        try {
+
+            BufferedWriter wr = new BufferedWriter(new FileWriter(tempFile));
+            for (String dateStr: dateList) {
+                for (i = 0; i <= journey.length; i++) {
+                    if (dateStr.equals(journey[i].getDate())) {
+                        str = journey[i].getId() + ";" + journey[i].getCity() + ";" + journey[i].getDate() + ";" + journey[i].getDays() + ";" + priceformat.format(journey[i].getPrice()) + ";" + journey[i].getVehicle();
+                        wr.write(str);
+                        wr.write("\n");
+                        break;
+                    }
+                }
+            }
+            System.out.println("sorted");
+            wr.close();
+
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        File sourceFile = new File("db.csv");
+        File temptFile = new File("dbtemp.csv");
+        temptFile.renameTo(sourceFile);
+        temptFile.delete();
+
+    }
+    public static void find(String findpricestr) throws IOException, FileNotFoundException {
+        if (findpricestr == null) {
+            System.out.println("wrong price");
+            return;
+        }
+        try {
+            double p = Double.parseDouble(findpricestr);
+        } catch (NumberFormatException e) {
+            System.out.println("wrong price");
+            return;
+        }
+
+        String line = " ";
+        System.out.println("------------------------------------------------------------");
+        System.out.printf("%-4s", "ID");
+        System.out.printf("%-21s", "City");
+        System.out.printf("%-11s", "Date");
+        System.out.printf("%6s", "Days");
+        System.out.printf("%10s", "Price");
+        System.out.printf("%7s", " Vehicle");
+        System.out.println("\n------------------------------------------------------------");
+
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(path));
+            while ((line = br.readLine()) != null) {
+                String[] values = line.split(";");
+                String travelprice = values[4];
+                double prices = Double.parseDouble(travelprice);
+                double findprice = Double.parseDouble(findpricestr);
+                if (findprice >= prices) {
+                    System.out.printf("%-4s", values[0]);
+                    System.out.printf("%-21s", values[1]);
+                    System.out.printf("%-11s", values[2]);
+                    System.out.printf("%6s", values[3]);
+                    System.out.printf("%10s", priceformat.format(Double.parseDouble(values[4])));
+                    System.out.printf("%7s", values[5]);
+                    System.out.println();
+                }
+            }
+            System.out.println("------------------------------------------------------------");
+            br.close();
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    public static void avg() throws IOException, FileNotFoundException {
+        String line = "";
+        double sum = 0;
+        int count = 0;
+        double avg;
+
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(path));
+            while ((line = br.readLine()) != null) {
+                String[] values = line.split(";");
+                double price = Double.parseDouble(values[4]);
+                sum = sum + price;
+                count++;
+            }
+            avg = sum / count;
+            System.out.printf("%.2f", avg);
+            br.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
